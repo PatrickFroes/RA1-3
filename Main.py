@@ -1,5 +1,5 @@
 # Igor Terplak: wkyouma, Gabriel Antony: misfasol, Kevin Henriques: kevinhag, Patrick Froes: PatrickFroes
-#Grupo: X
+#Grupo: RA1-3
 
 #Função parseExpressao: faz a análise da expressão e retorna lista de tokens
 def parseExpressao(linhas):
