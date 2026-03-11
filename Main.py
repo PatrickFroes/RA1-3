@@ -1,10 +1,7 @@
 # Igor Terplak: wkyouma, Gabriel Antony: misfasol, Kevin Henriques: kevinhag, Patrick Froes: PatrickFroes
 #Grupo: X
 
-
-import json
-
-#Função parseExpressao: faz a análise da expressão e validação da sintaxe, retorna lista de tokens se expressão válida
+#Função parseExpressao: faz a análise da expressão e retorna lista de tokens
 def parseExpressao(linhas):
     tokens = []
     i = 0
@@ -30,6 +27,8 @@ def parseExpressao(linhas):
         # Operadores
         if linhas[i] in '+-*/%^':
             token, i = estadoOperador(linhas, i)
+            if token and tokens[-1] in '+-*/%^':
+                raise ValueError(f"Operadores consecutivos: '{tokens[-1]}' e '{token}'")
             tokens.append(token)
             continue
         
@@ -47,8 +46,12 @@ def parseExpressao(linhas):
         
         raise ValueError(f"Caractere inválido: '{linhas[i]}'")
     
+    # Validar parênteses balanceados
     if not validar_parenteses(tokens):
         raise ValueError("Parênteses desbalanceados")
+    
+    # Validar sintaxe RPN
+    valida_rpn(tokens)
     
     return tokens
 
@@ -56,8 +59,13 @@ def parseExpressao(linhas):
 #retorno é o token número e a posição do próximo caractere
 def estadoNumero(linhas, inicio):
     j = inicio
+    pontos = 0
     while j < len(linhas) and (linhas[j].isdigit() or linhas[j] == '.'):
+        if linhas[j] == '.':
+            pontos += 1
         j += 1
+    if pontos > 1:
+        raise ValueError(f"Número inválido: {linhas[inicio:j]}")
     return linhas[inicio:j], j
 
 #Função para estado de operador na maquina de estados
@@ -85,10 +93,36 @@ def validar_parenteses(tokens):
                 return False
     return cont == 0
 
-#Função para salvar tokens em arquivo JSON
+#Função para salvar tokens em arquivo (função auxiliar para testes)
 def salvar_tokens(tokens_lista, nome_arquivo='tokens_ultimos.txt'):
     with open(nome_arquivo, 'w', encoding='utf-8') as f:
-        json.dump(tokens_lista, f, indent=2, ensure_ascii=False)
+        for token in tokens_lista:
+            f.write(f"{token}\n")
 
 
+#Função para verificar se é um operando
+def operando(token):
+    if token in ("RES", "MEM"):
+        return True
+    try:
+        float(token)
+        return True
+    except:
+        return False
+
+#Função para verificar se é operador 
+def operador(token):
+    return token in ['+', '-', '*', '/', '//', '%', '^']
+
+#Função para validar sintaxe RPN simples
+#Verifica se está no formato (operando operando operador)
+def valida_rpn(tokens):
+    i = 0
+    for i in range(len(tokens)):
+        if tokens[i] == '(':
+            if i + 4 >= len(tokens):
+                raise ValueError("Expressão incompleta após '('")
+            if not operando(tokens[i + 1]) or not operando(tokens[i + 2]) or not operador(tokens[i + 3]) or tokens[i + 4] != ')':
+                raise ValueError(f"Expressão RPN inválida: {tokens[i:i+5]}")
+    
 
